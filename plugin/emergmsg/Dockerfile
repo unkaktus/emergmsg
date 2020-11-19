@@ -4,8 +4,9 @@ RUN git clone https://github.com/coredns/coredns /coredns
 WORKDIR /coredns/plugin/emergmsg
 COPY . .
 WORKDIR /coredns
-RUN echo "emergmsg:emergmsg" >> plugin.cfg; \
-    go generate && go build -v
+COPY plugin.cfg .
+ENV CGO_ENABLED=0
+RUN go generate && go build -v
 
 
 FROM scratch
