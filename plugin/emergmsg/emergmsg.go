@@ -35,21 +35,23 @@ func (e *Emergmsg) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Ms
 	a := &dns.Msg{}
 	a.SetReply(r)
 	a.Authoritative = true
-	if len(r.Question) > 0 {
-		name := r.Question[0].Name
+	defer w.WriteMsg(a)
 
-		log.Debugf("Received emergency request: %+v", name)
-
-		msg := e.parseMsg(name)
-		if msg != "" {
-			err := e.rdb.RPush(ctx, e.key, msg).Err()
-			if err != nil {
-				return plugin.NextOrFailure(e.Name(), e.Next, ctx, w, r)
-			}
-		}
+	if len(r.Question) == 0 {
+		return dns.RcodeNameError, nil
 	}
-	a.Rcode = dns.RcodeNameError
-	w.WriteMsg(a)
+	q := r.Question[0]
+	name := q.Name
+	log.Debugf("Received emergency request: %+v", name)
+	msg := e.parseMsg(name)
+	if msg == "" {
+		return dns.RcodeNameError, nil
+	}
+	err := e.rdb.RPush(ctx, e.key, msg).Err()
+	if err != nil {
+		return plugin.NextOrFailure(e.Name(), e.Next, ctx, w, r)
+	}
+
 	return dns.RcodeNameError, nil
 }
 
