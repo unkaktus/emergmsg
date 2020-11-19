@@ -1,0 +1,8 @@
+emerg.example.com {
+  emergmsg emerg redis:6379 emerg
+  log
+}
+
+. {
+  log
+}
